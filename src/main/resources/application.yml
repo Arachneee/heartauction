@@ -19,3 +19,4 @@ spring:
         format_sql: true
         jdbc.time_zone: Asia/Seoul
     show-sql: true
+    open-in-view: false
