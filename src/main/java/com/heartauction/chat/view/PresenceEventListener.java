@@ -29,9 +29,9 @@ public class PresenceEventListener implements ApplicationListener<AbstractSubPro
     @Override
     public void onApplicationEvent(AbstractSubProtocolEvent event) {
         StompHeaderAccessor sha = StompHeaderAccessor.wrap(event.getMessage());
-        MemberSession memberSession = MemberSession.from(sha);
 
         if (event instanceof SessionSubscribeEvent) {
+            MemberSession memberSession = MemberSession.from(sha);
             String destination = sha.getDestination();
             String donationId = getDonationIdFromDestination(destination);
 
@@ -42,6 +42,7 @@ public class PresenceEventListener implements ApplicationListener<AbstractSubPro
             return;
         }
         if (event instanceof SessionUnsubscribeEvent || event instanceof SessionDisconnectEvent) {
+            MemberSession memberSession = MemberSession.from(sha);
             removeUserFromDonations(memberSession);
         }
     }
