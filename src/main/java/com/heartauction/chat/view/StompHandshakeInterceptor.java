@@ -1,7 +1,7 @@
 package com.heartauction.chat.view;
 
-import com.heartauction.member.domain.Member;
-import com.heartauction.member.domain.MemberRepository;
+import com.heartauction.member.application.MemberService;
+import com.heartauction.member.application.response.MemberResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StompHandshakeInterceptor implements ChannelInterceptor {
 
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -26,12 +26,11 @@ public class StompHandshakeInterceptor implements ChannelInterceptor {
             String memberIdValue = accessor.getFirstNativeHeader("memberId");
             if (memberIdValue != null) {
                 Long memberId = Long.parseLong(memberIdValue);
-                Member member = memberRepository.findById(memberId)
-                        .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+                MemberResponse member = memberService.findById(memberId);
 
-                log.info("Interceptor : memberId, memberName = {}, {}", memberId, member.getName());
+                log.info("Interceptor : memberId, memberName = {}, {}", memberId, member.name());
                 accessor.getSessionAttributes().put("memberId", memberId);
-                accessor.getSessionAttributes().put("memberName", member.getName());
+                accessor.getSessionAttributes().put("memberName", member.name());
             }
         }
         return message;
