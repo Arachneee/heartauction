@@ -66,69 +66,66 @@
         .donation-card {
             background-color: #fafafa;
             border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            border-radius: 8px;
             width: calc(33.333% - 20px);
             box-sizing: border-box;
             cursor: pointer;
             transition: box-shadow 0.3s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         .donation-card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .donation-card img {
             width: 100%;
-            height: 200px;
+            height: 250px;
             object-fit: cover;
             border-bottom: 1px solid #e0e0e0;
+            border-radius: 8px 8px 0 0;
         }
         .donation-card-content {
-            padding: 15px;
+            padding: 20px;
         }
         .donation-card-title {
-            font-size: 18px;
+            font-size: 20px;
             margin: 0 0 10px 0;
+            font-weight: bold;
         }
         .donation-card-price {
             font-size: 16px;
-            color: #888;
+            color: #4285f4;
+            margin-bottom: 20px;
         }
-        /* 참여자 목록 및 채팅방 스타일 */
-        #participants, #chatroom {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 4px;
-            background-color: #fafafa;
-        }
-        #participants ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        #participants li {
-            padding: 5px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        /* 메시지 영역 스타일 */
-        #messages {
-            max-height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #e0e0e0;
-            padding: 10px;
-            margin-bottom: 10px;
+        /* 상세 페이지 스타일 */
+        #donationDetail {
+            display: none;
+            padding: 20px;
             background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+        }
+        #donationDetail h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        #donationDetail p {
+            font-size: 18px;
+            color: #666;
+        }
+        #donationDetail .back-button {
+            padding: 10px 20px;
+            background-color: #357ae8;
+            color: #fff;
+            border: none;
             border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
         }
-        #messages p {
-            margin: 5px 0;
+        #donationDetail .back-button:hover {
+            background-color: #4285f4;
         }
-        #messageInput {
-            width: calc(100% - 20px);
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-right: 5px;
-        }
+
         /* 반응형 디자인 */
         @media (max-width: 1000px) {
             .container {
@@ -143,27 +140,16 @@
             .donation-card {
                 width: 100%;
             }
-            button {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            #messageInput {
-                width: 100%;
-                margin-bottom: 10px;
-            }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>도네이션 목록</h1>
-
-    <!-- 테스트 ID 안내 추가 -->
-    <p><strong>테스트 회원 ID:</strong> 1, 2, 3, 4, 5</p>
+    <h1>기부 물품 목록</h1>
 
     <!-- 회원 ID 입력 필드 -->
     <div class="form-group">
-        <label for="memberId">회원 ID:</label>
+        <label for="memberId">회원 ID (테스트 회원 ID : 1, 2, 3, 4, 5)</label>
         <input type="text" id="memberId" placeholder="회원 ID 입력">
     </div>
 
@@ -173,7 +159,7 @@
     </div>
 
     <!-- 도네이션 상세 정보 -->
-    <div id="donationDetail" style="display: none;">
+    <div id="donationDetail">
         <h2 id="donationTitle"></h2>
         <p id="donationDescription"></p>
         <p><strong>기부자:</strong> <span id="donationMemberName"></span></p>
@@ -198,6 +184,9 @@
             <input type="text" id="messageInput" placeholder="메시지 입력">
             <button id="sendBtn">전송</button>
         </div>
+
+        <!-- 뒤로 가기 버튼 -->
+        <button class="back-button" id="backBtn">목록으로 돌아가기</button>
     </div>
 </div>
 
@@ -287,6 +276,7 @@
         document.getElementById('donationMemberName').innerText = donation.memberName;
         document.getElementById('donationPresentPrice').innerText = donation.presentPrice + '원';
 
+        document.getElementById('donationList').style.display = 'none';
         document.getElementById('donationDetail').style.display = 'block';
 
         // 참여자 목록 초기화
@@ -303,6 +293,12 @@
         // 페이지 스크롤을 상세 정보로 이동
         document.getElementById('donationDetail').scrollIntoView({ behavior: 'smooth' });
     }
+
+    // 뒤로 가기 버튼 이벤트
+    document.getElementById('backBtn').addEventListener('click', function() {
+        document.getElementById('donationList').style.display = 'block';
+        document.getElementById('donationDetail').style.display = 'none';
+    });
 
     // WebSocket 연결 설정 함수
     function connect(memberId, callback) {
