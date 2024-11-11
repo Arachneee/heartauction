@@ -15,12 +15,11 @@
             padding: 0;
         }
         .container {
-            width: 800px;
+            width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #fff;
             min-height: 100vh;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         h1, h2, h3 {
             color: #333;
@@ -56,6 +55,42 @@
         }
         button:hover:enabled {
             background-color: #357ae8;
+        }
+        /* 도네이션 목록 카드 스타일 */
+        #donationList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .donation-card {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            width: calc(33.333% - 20px);
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: box-shadow 0.3s;
+        }
+        .donation-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .donation-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .donation-card-content {
+            padding: 15px;
+        }
+        .donation-card-title {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+        }
+        .donation-card-price {
+            font-size: 16px;
+            color: #888;
         }
         /* 참여자 목록 및 채팅방 스타일 */
         #participants, #chatroom {
@@ -95,10 +130,18 @@
             margin-right: 5px;
         }
         /* 반응형 디자인 */
-        @media (max-width: 800px) {
+        @media (max-width: 1000px) {
             .container {
                 width: 100%;
                 padding: 10px;
+            }
+            .donation-card {
+                width: calc(50% - 20px);
+            }
+        }
+        @media (max-width: 600px) {
+            .donation-card {
+                width: 100%;
             }
             button {
                 width: 100%;
@@ -113,7 +156,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>도네이션 채팅 참가</h1>
+    <h1>도네이션 목록</h1>
 
     <!-- 테스트 ID 안내 추가 -->
     <p><strong>테스트 회원 ID:</strong> 1, 2, 3, 4, 5</p>
@@ -124,32 +167,37 @@
         <input type="text" id="memberId" placeholder="회원 ID 입력">
     </div>
 
-    <!-- 도네이션 ID 입력 필드 -->
-    <div class="form-group">
-        <label for="donationId">도네이션 ID:</label>
-        <input type="text" id="donationId" placeholder="도네이션 ID 입력">
+    <!-- 도네이션 목록 -->
+    <div id="donationList">
+        <!-- 도네이션 목록이 표시될 영역 -->
     </div>
 
-    <button id="joinBtn">도네이션 참가</button>
-    <button id="leaveBtn" disabled>도네이션 나가기</button>
+    <!-- 도네이션 상세 정보 -->
+    <div id="donationDetail" style="display: none;">
+        <h2 id="donationTitle"></h2>
+        <p id="donationDescription"></p>
+        <p><strong>기부자:</strong> <span id="donationMemberName"></span></p>
+        <p><strong>현재 가격:</strong> <span id="donationPresentPrice"></span></p>
+        <button id="joinChatBtn">채팅방 입장</button>
+        <button id="leaveChatBtn" disabled>채팅방 나가기</button>
 
-    <h2>현재 도네이션 ID: <span id="currentDonationId">없음</span></h2>
-
-    <div id="participants">
-        <h3>참여자 목록</h3>
-        <ul id="participantsList">
-            <li>없음</li>
-        </ul>
-    </div>
-
-    <!-- 채팅방 영역 -->
-    <div id="chatroom" style="display: none;">
-        <h3>채팅방</h3>
-        <div id="messages">
-            <!-- 메시지들이 표시될 영역 -->
+        <!-- 참여자 목록 -->
+        <div id="participants">
+            <h3>참여자 목록</h3>
+            <ul id="participantsList">
+                <li>없음</li>
+            </ul>
         </div>
-        <input type="text" id="messageInput" placeholder="메시지 입력">
-        <button id="sendBtn">전송</button>
+
+        <!-- 채팅방 영역 -->
+        <div id="chatroom" style="display: none;">
+            <h3>채팅방</h3>
+            <div id="messages">
+                <!-- 메시지들이 표시될 영역 -->
+            </div>
+            <input type="text" id="messageInput" placeholder="메시지 입력">
+            <button id="sendBtn">전송</button>
+        </div>
     </div>
 </div>
 
@@ -159,6 +207,102 @@
     var participantsSubscription = null;
     var currentDonationId = null;
     var memberId = null; // memberId 저장 변수
+
+    // 페이지 로드 시 도네이션 목록 가져오기
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDonationList();
+    });
+
+    // 도네이션 목록 로드 함수
+    function loadDonationList() {
+        fetch('http://localhost:8080/donations')
+            .then(response => response.json())
+            .then(data => {
+                displayDonationList(data);
+            })
+            .catch(error => {
+                console.error('도네이션 목록 로드 중 오류 발생:', error);
+            });
+    }
+
+    // 도네이션 목록 표시 함수
+    function displayDonationList(donations) {
+        var donationListDiv = document.getElementById('donationList');
+        donationListDiv.innerHTML = '';
+
+        if (donations.length === 0) {
+            donationListDiv.innerHTML = '<p>등록된 도네이션이 없습니다.</p>';
+            return;
+        }
+
+        donations.forEach(function(donation) {
+            var card = document.createElement('div');
+            card.className = 'donation-card';
+
+            // 이미지가 있는 경우 추가 (여기서는 임시 이미지 사용)
+            var img = document.createElement('img');
+            img.src = 'https://via.placeholder.com/300x200?text=Donation+Image';
+            card.appendChild(img);
+
+            var content = document.createElement('div');
+            content.className = 'donation-card-content';
+
+            var title = document.createElement('h3');
+            title.className = 'donation-card-title';
+            title.innerText = donation.title;
+            content.appendChild(title);
+
+            var price = document.createElement('p');
+            price.className = 'donation-card-price';
+            price.innerText = '현재 가격: ' + donation.presentPrice + '원';
+            content.appendChild(price);
+
+            card.appendChild(content);
+
+            card.addEventListener('click', function() {
+                loadDonationDetail(donation.id);
+            });
+
+            donationListDiv.appendChild(card);
+        });
+    }
+
+    // 도네이션 상세 정보 로드 함수
+    function loadDonationDetail(donationId) {
+        fetch('http://localhost:8080/donations/' + donationId)
+            .then(response => response.json())
+            .then(data => {
+                displayDonationDetail(data);
+            })
+            .catch(error => {
+                console.error('도네이션 상세 정보 로드 중 오류 발생:', error);
+            });
+    }
+
+    // 도네이션 상세 정보 표시 함수
+    function displayDonationDetail(donation) {
+        currentDonationId = donation.id;
+        document.getElementById('donationTitle').innerText = donation.title;
+        document.getElementById('donationDescription').innerText = donation.description;
+        document.getElementById('donationMemberName').innerText = donation.memberName;
+        document.getElementById('donationPresentPrice').innerText = donation.presentPrice + '원';
+
+        document.getElementById('donationDetail').style.display = 'block';
+
+        // 참여자 목록 초기화
+        displayParticipants([]);
+
+        // 버튼 상태 업데이트
+        document.getElementById('joinChatBtn').disabled = false;
+        document.getElementById('leaveChatBtn').disabled = true;
+
+        // 채팅방 숨기기 및 메시지 초기화
+        document.getElementById('chatroom').style.display = 'none';
+        document.getElementById('messages').innerHTML = '';
+
+        // 페이지 스크롤을 상세 정보로 이동
+        document.getElementById('donationDetail').scrollIntoView({ behavior: 'smooth' });
+    }
 
     // WebSocket 연결 설정 함수
     function connect(memberId, callback) {
@@ -179,38 +323,48 @@
         });
     }
 
-    // 도네이션 참가 함수
-    function joinDonation() {
-        currentDonationId = document.getElementById('donationId').value.trim();
-
+    // 채팅방 참가 함수
+    function joinChat() {
         if (!currentDonationId) {
-            alert('도네이션 ID를 입력해주세요.');
+            alert('도네이션을 선택해주세요.');
             return;
         }
 
-        if (currentSubscription) {
-            // 이전 도네이션 구독 해제
-            leaveDonation();
+        memberId = document.getElementById('memberId').value.trim();
+        if (!memberId) {
+            alert('회원 ID를 입력해주세요.');
+            return;
         }
 
-        document.getElementById('currentDonationId').innerText = currentDonationId;
+        if (!stompClient || !stompClient.connected) {
+            connect(memberId, subscribeToChat);
+        } else {
+            subscribeToChat();
+        }
+    }
+
+    // 채팅방 구독 함수
+    function subscribeToChat() {
+        if (currentSubscription) {
+            leaveChat();
+        }
 
         var destination = '/sub/chat/donations/' + currentDonationId;
 
-        // 참여자 목록 구독 (먼저 설정)
+        // 참여자 목록 구독
         var participantsDestination = destination + '/subscribers';
         participantsSubscription = stompClient.subscribe(participantsDestination, function(message) {
             var participants = JSON.parse(message.body);
             displayParticipants(participants);
         });
 
-        // 헤더 없이 구독
+        // 채팅 메시지 구독
         currentSubscription = stompClient.subscribe(destination, function(message) {
             var chatMessage = JSON.parse(message.body);
             displayMessage(chatMessage);
         });
 
-        console.log('도네이션 ' + currentDonationId + '에 참가했습니다.');
+        console.log('도네이션 ' + currentDonationId + ' 채팅방에 참가했습니다.');
 
         // 채팅방 표시 및 메시지 초기화
         document.getElementById('chatroom').style.display = 'block';
@@ -220,19 +374,37 @@
         loadChatHistory(currentDonationId);
 
         // 버튼 상태 업데이트
-        document.getElementById('joinBtn').disabled = true;
-        document.getElementById('leaveBtn').disabled = false;
+        document.getElementById('joinChatBtn').disabled = true;
+        document.getElementById('leaveChatBtn').disabled = false;
+    }
+
+    // 채팅방 나가기 함수
+    function leaveChat() {
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+            currentSubscription = null;
+        }
+        if (participantsSubscription) {
+            participantsSubscription.unsubscribe();
+            participantsSubscription = null;
+        }
+        displayParticipants([]);
+
+        // 채팅방 숨기기 및 메시지 초기화
+        document.getElementById('chatroom').style.display = 'none';
+        document.getElementById('messages').innerHTML = '';
+
+        console.log('채팅방에서 나갔습니다.');
+
+        // 버튼 상태 업데이트
+        document.getElementById('joinChatBtn').disabled = false;
+        document.getElementById('leaveChatBtn').disabled = true;
     }
 
     // 이전 채팅 메시지 로드 함수
     function loadChatHistory(donationId) {
         fetch('http://localhost:8080/chats?donationId=' + donationId)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('네트워크 응답이 올바르지 않습니다.');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (Array.isArray(data)) {
                     data.forEach(chatMessage => {
@@ -271,31 +443,6 @@
         messageInput.value = '';
     }
 
-    // 도네이션 나가기 함수
-    function leaveDonation() {
-        if (currentSubscription) {
-            currentSubscription.unsubscribe();
-            currentSubscription = null;
-        }
-        if (participantsSubscription) {
-            participantsSubscription.unsubscribe();
-            participantsSubscription = null;
-        }
-        displayParticipants([]);
-        document.getElementById('currentDonationId').innerText = '없음';
-        currentDonationId = null;
-
-        // 채팅방 숨기기 및 메시지 초기화
-        document.getElementById('chatroom').style.display = 'none';
-        document.getElementById('messages').innerHTML = '';
-
-        console.log('도네이션에서 나갔습니다.');
-
-        // 버튼 상태 업데이트
-        document.getElementById('joinBtn').disabled = false;
-        document.getElementById('leaveBtn').disabled = true;
-    }
-
     // 참여자 목록 표시 함수
     function displayParticipants(participants) {
         var participantsList = document.getElementById('participantsList');
@@ -313,24 +460,13 @@
         });
     }
 
-    // 도네이션 참가 버튼 클릭 이벤트
-    document.getElementById('joinBtn').addEventListener('click', function() {
-        memberId = document.getElementById('memberId').value.trim();
-        if (!memberId) {
-            alert('회원 ID를 입력해주세요.');
-            return;
-        }
-
-        if (!stompClient || !stompClient.connected) {
-            connect(memberId, joinDonation);
-        } else {
-            joinDonation();
-        }
+    // 이벤트 리스너 설정
+    document.getElementById('joinChatBtn').addEventListener('click', function() {
+        joinChat();
     });
 
-    // 도네이션 나가기 버튼 클릭 이벤트
-    document.getElementById('leaveBtn').addEventListener('click', function() {
-        leaveDonation();
+    document.getElementById('leaveChatBtn').addEventListener('click', function() {
+        leaveChat();
     });
 
     // 메시지 전송 버튼 클릭 이벤트
@@ -353,10 +489,6 @@
             });
         }
     };
-
-    // 초기 버튼 상태 설정
-    document.getElementById('joinBtn').disabled = false;
-    document.getElementById('leaveBtn').disabled = true;
 </script>
 </body>
 </html>
