@@ -1,6 +1,6 @@
 package com.heartauction.donation.domain;
 
-import com.heartauction.core.BaseEntity;
+import com.heartauction.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

@@ -1,4 +1,4 @@
-package com.heartauction.core;
+package com.heartauction.common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

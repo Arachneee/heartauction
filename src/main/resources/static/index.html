@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>도네이션 채팅 참가</title>
+    <!-- CDN URL -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        /* 전체 레이아웃 설정 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        /* 입력 폼 스타일 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        button:hover:enabled {
+            background-color: #357ae8;
+        }
+        /* 참여자 목록 및 채팅방 스타일 */
+        #participants, #chatroom {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        #participants ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #participants li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        /* 메시지 영역 스타일 */
+        #messages {
+            max-height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border-radius: 4px;
+        }
+        #messages p {
+            margin: 5px 0;
+        }
+        #messageInput {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-right: 5px;
+        }
+        /* 반응형 디자인 */
+        @media (max-width: 800px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
+            button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            #messageInput {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>도네이션 채팅 참가</h1>
+
+    <!-- 테스트 ID 안내 추가 -->
+    <p><strong>테스트 회원 ID:</strong> 1, 2, 3, 4, 5</p>
+
+    <!-- 회원 ID 입력 필드 -->
+    <div class="form-group">
+        <label for="memberId">회원 ID:</label>
+        <input type="text" id="memberId" placeholder="회원 ID 입력">
+    </div>
+
+    <!-- 도네이션 ID 입력 필드 -->
+    <div class="form-group">
+        <label for="donationId">도네이션 ID:</label>
+        <input type="text" id="donationId" placeholder="도네이션 ID 입력">
+    </div>
+
+    <button id="joinBtn">도네이션 참가</button>
+    <button id="leaveBtn" disabled>도네이션 나가기</button>
+
+    <h2>현재 도네이션 ID: <span id="currentDonationId">없음</span></h2>
+
+    <div id="participants">
+        <h3>참여자 목록</h3>
+        <ul id="participantsList">
+            <li>없음</li>
+        </ul>
+    </div>
+
+    <!-- 채팅방 영역 -->
+    <div id="chatroom" style="display: none;">
+        <h3>채팅방</h3>
+        <div id="messages">
+            <!-- 메시지들이 표시될 영역 -->
+        </div>
+        <input type="text" id="messageInput" placeholder="메시지 입력">
+        <button id="sendBtn">전송</button>
+    </div>
+</div>
+
+<script>
+    var stompClient = null;
+    var currentSubscription = null;
+    var participantsSubscription = null;
+    var currentDonationId = null;
+    var memberId = null; // memberId 저장 변수
+
+    // WebSocket 연결 설정 함수
+    function connect(memberId, callback) {
+        var socket = new SockJS('http://localhost:8080/ws'); // 서버의 WebSocket 엔드포인트
+        stompClient = Stomp.over(socket);
+
+        var headers = {
+            'memberId': memberId
+        };
+
+        stompClient.connect(headers, function(frame) {
+            console.log('STOMP에 연결되었습니다: ' + frame);
+            if (callback) {
+                callback();
+            }
+        }, function(error) {
+            console.error('STOMP 연결 오류:', error);
+        });
+    }
+
+    // 도네이션 참가 함수
+    function joinDonation() {
+        currentDonationId = document.getElementById('donationId').value.trim();
+
+        if (!currentDonationId) {
+            alert('도네이션 ID를 입력해주세요.');
+            return;
+        }
+
+        if (currentSubscription) {
+            // 이전 도네이션 구독 해제
+            leaveDonation();
+        }
+
+        document.getElementById('currentDonationId').innerText = currentDonationId;
+
+        var destination = '/sub/chat/donations/' + currentDonationId;
+
+        // 참여자 목록 구독 (먼저 설정)
+        var participantsDestination = destination + '/subscribers';
+        participantsSubscription = stompClient.subscribe(participantsDestination, function(message) {
+            var participants = JSON.parse(message.body);
+            displayParticipants(participants);
+        });
+
+        // 헤더 없이 구독
+        currentSubscription = stompClient.subscribe(destination, function(message) {
+            var chatMessage = JSON.parse(message.body);
+            displayMessage(chatMessage);
+        });
+
+        console.log('도네이션 ' + currentDonationId + '에 참가했습니다.');
+
+        // 채팅방 표시 및 메시지 초기화
+        document.getElementById('chatroom').style.display = 'block';
+        document.getElementById('messages').innerHTML = '';
+
+        // 이전 채팅 메시지 가져오기
+        loadChatHistory(currentDonationId);
+
+        // 버튼 상태 업데이트
+        document.getElementById('joinBtn').disabled = true;
+        document.getElementById('leaveBtn').disabled = false;
+    }
+
+    // 이전 채팅 메시지 로드 함수
+    function loadChatHistory(donationId) {
+        fetch('http://localhost:8080/chats?donationId=' + donationId)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답이 올바르지 않습니다.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (Array.isArray(data)) {
+                    data.forEach(chatMessage => {
+                        displayMessage(chatMessage);
+                    });
+                } else {
+                    console.error('채팅 기록 데이터 형식이 올바르지 않습니다:', data);
+                }
+            })
+            .catch(error => {
+                console.error('채팅 기록 로드 중 오류 발생:', error);
+            });
+    }
+
+    // 메시지 표시 함수
+    function displayMessage(chatMessage) {
+        var messagesDiv = document.getElementById('messages');
+        var p = document.createElement('p');
+        p.innerHTML = '<strong>' + chatMessage.senderName + ':</strong> ' + chatMessage.message;
+        messagesDiv.appendChild(p);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // 메시지 전송 함수
+    function sendMessage() {
+        var messageInput = document.getElementById('messageInput');
+        var message = messageInput.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        // 메시지 전송
+        stompClient.send('/pub/chat/donations/' + currentDonationId, {}, message);
+
+        messageInput.value = '';
+    }
+
+    // 도네이션 나가기 함수
+    function leaveDonation() {
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+            currentSubscription = null;
+        }
+        if (participantsSubscription) {
+            participantsSubscription.unsubscribe();
+            participantsSubscription = null;
+        }
+        displayParticipants([]);
+        document.getElementById('currentDonationId').innerText = '없음';
+        currentDonationId = null;
+
+        // 채팅방 숨기기 및 메시지 초기화
+        document.getElementById('chatroom').style.display = 'none';
+        document.getElementById('messages').innerHTML = '';
+
+        console.log('도네이션에서 나갔습니다.');
+
+        // 버튼 상태 업데이트
+        document.getElementById('joinBtn').disabled = false;
+        document.getElementById('leaveBtn').disabled = true;
+    }
+
+    // 참여자 목록 표시 함수
+    function displayParticipants(participants) {
+        var participantsList = document.getElementById('participantsList');
+        participantsList.innerHTML = '';
+        if (participants.length === 0) {
+            var li = document.createElement('li');
+            li.innerText = '없음';
+            participantsList.appendChild(li);
+            return;
+        }
+        participants.forEach(function(participant) {
+            var li = document.createElement('li');
+            li.innerText = participant;
+            participantsList.appendChild(li);
+        });
+    }
+
+    // 도네이션 참가 버튼 클릭 이벤트
+    document.getElementById('joinBtn').addEventListener('click', function() {
+        memberId = document.getElementById('memberId').value.trim();
+        if (!memberId) {
+            alert('회원 ID를 입력해주세요.');
+            return;
+        }
+
+        if (!stompClient || !stompClient.connected) {
+            connect(memberId, joinDonation);
+        } else {
+            joinDonation();
+        }
+    });
+
+    // 도네이션 나가기 버튼 클릭 이벤트
+    document.getElementById('leaveBtn').addEventListener('click', function() {
+        leaveDonation();
+    });
+
+    // 메시지 전송 버튼 클릭 이벤트
+    document.getElementById('sendBtn').addEventListener('click', function() {
+        sendMessage();
+    });
+
+    // 메시지 입력 필드에서 Enter 키를 눌렀을 때 메시지 전송
+    document.getElementById('messageInput').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // 페이지를 떠날 때 WebSocket 연결 해제
+    window.onbeforeunload = function() {
+        if (stompClient) {
+            stompClient.disconnect(function() {
+                console.log('STOMP 연결이 해제되었습니다.');
+            });
+        }
+    };
+
+    // 초기 버튼 상태 설정
+    document.getElementById('joinBtn').disabled = false;
+    document.getElementById('leaveBtn').disabled = true;
+</script>
+</body>
+</html>

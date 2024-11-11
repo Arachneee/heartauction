@@ -1,4 +1,4 @@
-package com.heartauction.core.config;
+package com.heartauction.common.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
