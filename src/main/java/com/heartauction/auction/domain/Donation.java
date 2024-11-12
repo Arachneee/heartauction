@@ -1,4 +1,4 @@
-package com.heartauction.chat.domain;
+package com.heartauction.auction.domain;
 
 import com.heartauction.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -13,24 +13,24 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class Chat extends BaseEntity {
+public class Donation extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private Long auctionId;
+    private String title;
 
     @Column(nullable = false)
-    private Long senderId;
+    private String description;
 
     @Column(nullable = false)
-    private String message;
+    private Long memberId;
 
-    public Chat(Long auctionId, Long senderId, String message) {
-        this.auctionId = auctionId;
-        this.senderId = senderId;
-        this.message = message;
+    public Donation(String title, String description, Long memberId) {
+        this.title = title;
+        this.description = description;
+        this.memberId = memberId;
     }
 }

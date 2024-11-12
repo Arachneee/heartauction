@@ -19,18 +19,18 @@ public class ChatService {
     private final ChatRepository chatRepository;
 
     @Transactional
-    public ChatResponse createChat(Long donationId, ChatRequest request) {
+    public ChatResponse createChat(Long auctionId, ChatRequest request) {
         MemberResponse memberResponse = memberService.findById(request.senderId());
 
-        Chat chat = request.toChat(donationId);
+        Chat chat = request.toChat(auctionId);
         Chat savedChat = chatRepository.save(chat);
 
         return ChatResponse.of(savedChat, memberResponse);
     }
 
     @Transactional(readOnly = true)
-    public List<ChatResponse> findAllByDonationId(Long donationId) {
-        List<Chat> chats = chatRepository.findAllByDonationId(donationId);
+    public List<ChatResponse> findAllByAuctionId(Long auctionId) {
+        List<Chat> chats = chatRepository.findAllByAuctionId(auctionId);
 
         return chats.stream()
                 .map(chat -> ChatResponse.of(chat, memberService.findById(chat.getSenderId())))

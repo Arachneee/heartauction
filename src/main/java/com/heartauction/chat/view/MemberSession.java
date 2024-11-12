@@ -13,11 +13,10 @@ public record MemberSession(
 
     public static MemberSession from(StompHeaderAccessor sha) {
         Map<String, Object> sessionAttributes = sha.getSessionAttributes();
-        Long memberId = (Long) sessionAttributes.get("memberId");
         String memberName = (String) sessionAttributes.get("memberName");
         String sessionId = sha.getSessionId();
 
-        log.info("Listener : sessionId, memberId, memberName = {}, {}, {}", sessionId, memberId, memberName);
+        log.info("Listener : sessionId, memberName = {}, {}, {}", sessionId, memberName);
         return new MemberSession(sessionId, memberName);
     }
 

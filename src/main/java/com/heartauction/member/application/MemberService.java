@@ -20,4 +20,11 @@ public class MemberService {
 
         return MemberResponse.from(member);
     }
+
+    @Transactional(readOnly = true)
+    public void validateId(Long id) {
+        if (!memberRepository.existsById(id)) {
+            throw new IllegalArgumentException("Invalid member id");
+        }
+    }
 }

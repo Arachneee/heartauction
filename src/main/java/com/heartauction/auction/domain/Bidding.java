@@ -1,7 +1,10 @@
-package com.heartauction.donation.domain;
+package com.heartauction.auction.domain;
 
 import com.heartauction.common.BaseEntity;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,28 +16,21 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class Donation extends BaseEntity {
+public class Bidding extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String title;
-
-    @Column(nullable = false)
-    private String description;
+    private Long auctionId;
 
     @Column(nullable = false)
     private Long memberId;
 
-    @Column(nullable = false)
-    private Long startAmount;
-
-    public Donation(String title, String description, Long memberId, Long startAmount) {
-        this.title = title;
-        this.description = description;
-        this.memberId = memberId;
-        this.startAmount = startAmount;
-    }
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "value", column = @Column(name = "start_price"))
+    })
+    private AuctionPrice price;
 }

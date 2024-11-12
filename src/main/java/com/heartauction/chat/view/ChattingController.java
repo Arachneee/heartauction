@@ -24,20 +24,20 @@ public class ChattingController {
 
     private final ChatService chatService;
 
-    @MessageMapping("/chat/donations/{donationId}")
-    @SendTo("/sub/chat/donations/{donationId}")
-    public ChatResponse createChat(@DestinationVariable Long donationId, @Payload String message, StompHeaderAccessor headerAccessor) {
+    @MessageMapping("/chat/auctions/{auctionId}")
+    @SendTo("/sub/chat/auctions/{auctionId}")
+    public ChatResponse createChat(@DestinationVariable Long auctionId, @Payload String message, StompHeaderAccessor headerAccessor) {
         Long memberId = (Long) headerAccessor.getSessionAttributes().get("memberId");
 
-        return chatService.createChat(donationId, new ChatRequest(memberId, message));
+        return chatService.createChat(auctionId, new ChatRequest(memberId, message));
     }
 
     // TODO : 페이징
     @ResponseBody
     @GetMapping("/chats")
-    public ResponseEntity<List<ChatResponse>> findAll(@RequestParam("donationId") Long donationId) {
-        log.info("GET /chats 호출됨, donationId: {}", donationId); // 로그 추가
-        List<ChatResponse> chatResponses = chatService.findAllByDonationId(donationId);
+    public ResponseEntity<List<ChatResponse>> findAll(@RequestParam("auctionId") Long auctionId) {
+        log.info("GET /chats 호출됨, donationId: {}", auctionId); // 로그 추가
+        List<ChatResponse> chatResponses = chatService.findAllByAuctionId(auctionId);
         return ResponseEntity.ok(chatResponses);
     }
 }

@@ -20,7 +20,7 @@ import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 @Component
 public class PresenceEventListener implements ApplicationListener<AbstractSubProtocolEvent> {
 
-    private static final String SUB_CHAT_DONATIONS_PREFIX = "/sub/chat/donations/";
+    private static final String SUB_CHAT_DONATIONS_PREFIX = "/sub/chat/auctions/";
     private static final String SUB_CHAT_DONATIONS_SUFFIX = "/subscribers";
 
     private final SimpMessageSendingOperations messagingTemplate;

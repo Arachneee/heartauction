@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>도네이션 채팅 참가</title>
+    <title>경매 채팅 참가</title>
     <!-- CDN URL -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -33,7 +33,7 @@
             font-weight: bold;
             margin-bottom: 5px;
         }
-        input[type="text"] {
+        input[type="text"], input[type="number"], input[type="datetime-local"] {
             width: calc(100% - 20px);
             padding: 8px 10px;
             border: 1px solid #ccc;
@@ -57,13 +57,13 @@
             background-color: #357ae8;
         }
         /* 도네이션 목록 카드 스타일 */
-        #donationList {
+        #auctionList {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             margin-top: 20px;
         }
-        .donation-card {
+        .auction-card {
             background-color: #fafafa;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
@@ -73,31 +73,36 @@
             transition: box-shadow 0.3s;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
-        .donation-card:hover {
+        .auction-card:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .donation-card img {
+        .auction-card img {
             width: 100%;
             height: 250px;
             object-fit: cover;
             border-bottom: 1px solid #e0e0e0;
             border-radius: 8px 8px 0 0;
         }
-        .donation-card-content {
+        .auction-card-content {
             padding: 20px;
         }
-        .donation-card-title {
+        .auction-card-title {
             font-size: 20px;
             margin: 0 0 10px 0;
             font-weight: bold;
         }
-        .donation-card-price {
+        .auction-card-price {
+            font-size: 16px;
+            color: #4285f4;
+            margin-bottom: 20px;
+        }
+        .auction-card-time {
             font-size: 16px;
             color: #4285f4;
             margin-bottom: 20px;
         }
         /* 상세 페이지 스타일 */
-        #donationDetail {
+        #auctionDetail {
             display: none;
             padding: 20px;
             background-color: #fff;
@@ -105,15 +110,15 @@
             box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
             margin-top: 40px;
         }
-        #donationDetail h2 {
+        #auctionDetail h2 {
             font-size: 28px;
             margin-bottom: 20px;
         }
-        #donationDetail p {
+        #auctionDetail p {
             font-size: 18px;
             color: #666;
         }
-        #donationDetail .back-button {
+        #auctionDetail .back-button {
             padding: 10px 20px;
             background-color: #357ae8;
             color: #fff;
@@ -122,30 +127,80 @@
             cursor: pointer;
             margin-top: 20px;
         }
-        #donationDetail .back-button:hover {
+        #auctionDetail .back-button:hover {
             background-color: #4285f4;
         }
-
+        /* 경매 생성 버튼 스타일 */
+        #createAuctionBtn {
+            padding: 10px 20px;
+            background-color: #34a853;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #createAuctionBtn:hover {
+            background-color: #2c8e46;
+        }
+        /* 모달 스타일 */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* 10% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%; /* Could be more or less, depending on screen size */
+            border-radius: 8px;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover,
+        .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
         /* 반응형 디자인 */
         @media (max-width: 1000px) {
             .container {
                 width: 100%;
                 padding: 10px;
             }
-            .donation-card {
+            .auction-card {
                 width: calc(50% - 20px);
+            }
+            .modal-content {
+                width: 80%;
             }
         }
         @media (max-width: 600px) {
-            .donation-card {
+            .auction-card {
                 width: 100%;
+            }
+            .modal-content {
+                width: 95%;
             }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>기부 물품 목록</h1>
+    <h1>기부 물품 경매 목록</h1>
 
     <!-- 회원 ID 입력 필드 -->
     <div class="form-group">
@@ -153,17 +208,21 @@
         <input type="text" id="memberId" placeholder="회원 ID 입력">
     </div>
 
-    <!-- 도네이션 목록 -->
-    <div id="donationList">
-        <!-- 도네이션 목록이 표시될 영역 -->
+    <!-- 경매 생성 버튼 -->
+    <button id="createAuctionBtn">경매 생성</button>
+
+    <!-- 경매 목록 -->
+    <div id="auctionList">
+        <!-- 경매 목록이 표시될 영역 -->
     </div>
 
-    <!-- 도네이션 상세 정보 -->
-    <div id="donationDetail">
-        <h2 id="donationTitle"></h2>
-        <p id="donationDescription"></p>
-        <p><strong>기부자:</strong> <span id="donationMemberName"></span></p>
-        <p><strong>현재 가격:</strong> <span id="donationPresentPrice"></span></p>
+    <!-- 경매 상세 정보 -->
+    <div id="auctionDetail">
+        <h2 id="auctionTitle"></h2>
+        <p id="auctionDescription"></p>
+        <p><strong>기부자:</strong> <span id="auctionMemberName"></span></p>
+        <p><strong>시작 가격:</strong> <span id="auctionStartPrice"></span></p>
+        <p><strong>시작 시간:</strong> <span id="auctionStartDateTime"></span></p>
         <button id="joinChatBtn">채팅방 입장</button>
         <button id="leaveChatBtn" disabled>채팅방 나가기</button>
 
@@ -188,45 +247,76 @@
         <!-- 뒤로 가기 버튼 -->
         <button class="back-button" id="backBtn">목록으로 돌아가기</button>
     </div>
+
+    <!-- 경매 생성 모달 -->
+    <div id="createAuctionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeCreateAuctionModal">&times;</span>
+            <h2>경매 생성</h2>
+            <div class="form-group">
+                <label for="auctionTitleInput">제목</label>
+                <input type="text" id="auctionTitleInput" placeholder="경매 제목">
+            </div>
+            <div class="form-group">
+                <label for="auctionDescriptionInput">설명</label>
+                <input type="text" id="auctionDescriptionInput" placeholder="경매 설명">
+            </div>
+            <div class="form-group">
+                <label for="auctionStartPriceInput">시작 가격</label>
+                <input type="number" id="auctionStartPriceInput" placeholder="시작 가격">
+            </div>
+            <div class="form-group">
+                <label for="auctionStartDateTimeInput">시작 시간</label>
+                <input type="datetime-local" id="auctionStartDateTimeInput">
+            </div>
+            <button id="submitCreateAuctionBtn">경매 생성</button>
+        </div>
+    </div>
 </div>
 
 <script>
     var stompClient = null;
     var currentSubscription = null;
     var participantsSubscription = null;
-    var currentDonationId = null;
+    var currentAuctionId = null;
     var memberId = null; // memberId 저장 변수
 
-    // 페이지 로드 시 도네이션 목록 가져오기
+    // 경매 생성 모달 요소
+    var createAuctionModal = document.getElementById('createAuctionModal');
+    var createAuctionBtn = document.getElementById('createAuctionBtn');
+    var closeCreateAuctionModal = document.getElementById('closeCreateAuctionModal');
+    var submitCreateAuctionBtn = document.getElementById('submitCreateAuctionBtn');
+
+    // 페이지 로드 시 경매 목록 가져오기
     document.addEventListener('DOMContentLoaded', function() {
-        loadDonationList();
+        loadAuctionList();
     });
 
-    // 도네이션 목록 로드 함수
-    function loadDonationList() {
-        fetch('http://localhost:8080/donations')
+    // 경매 목록 로드 함수
+    function loadAuctionList() {
+        fetch('http://localhost:8080/auctions')
             .then(response => response.json())
             .then(data => {
-                displayDonationList(data);
+                displayAuctionList(data);
             })
             .catch(error => {
-                console.error('도네이션 목록 로드 중 오류 발생:', error);
+                console.error('경매 목록 로드 중 오류 발생:', error);
             });
     }
 
-    // 도네이션 목록 표시 함수
-    function displayDonationList(donations) {
-        var donationListDiv = document.getElementById('donationList');
-        donationListDiv.innerHTML = '';
+    // 경매 목록 표시 함수
+    function displayAuctionList(auctions) {
+        var auctionListDiv = document.getElementById('auctionList');
+        auctionListDiv.innerHTML = '';
 
-        if (donations.length === 0) {
-            donationListDiv.innerHTML = '<p>등록된 도네이션이 없습니다.</p>';
+        if (auctions.length === 0) {
+            auctionListDiv.innerHTML = '<p>등록된 경매가 없습니다.</p>';
             return;
         }
 
-        donations.forEach(function(donation) {
+        auctions.forEach(function(auction) {
             var card = document.createElement('div');
-            card.className = 'donation-card';
+            card.className = 'auction-card';
 
             // 이미지가 있는 경우 추가 (여기서는 임시 이미지 사용)
             var img = document.createElement('img');
@@ -234,50 +324,56 @@
             card.appendChild(img);
 
             var content = document.createElement('div');
-            content.className = 'donation-card-content';
+            content.className = 'auction-card-content';
 
             var title = document.createElement('h3');
-            title.className = 'donation-card-title';
-            title.innerText = donation.title;
+            title.className = 'auction-card-title';
+            title.innerText = auction.title;
             content.appendChild(title);
 
             var price = document.createElement('p');
-            price.className = 'donation-card-price';
-            price.innerText = '현재 가격: ' + donation.presentPrice + '원';
+            price.className = 'auction-card-price';
+            price.innerText = '시작 가격: ' + auction.startPrice + '원';
             content.appendChild(price);
+
+            var time = document.createElement('p');
+            time.className = 'auction-card-time';
+            time.innerText = '시작 시간: ' + auction.startDateTime;
+            content.appendChild(time);
 
             card.appendChild(content);
 
             card.addEventListener('click', function() {
-                loadDonationDetail(donation.id);
+                loadAuctionDetail(auction.id);
             });
 
-            donationListDiv.appendChild(card);
+            auctionListDiv.appendChild(card);
         });
     }
 
-    // 도네이션 상세 정보 로드 함수
-    function loadDonationDetail(donationId) {
-        fetch('http://localhost:8080/donations/' + donationId)
+    // 경매 상세 정보 로드 함수
+    function loadAuctionDetail(auctionId) {
+        fetch('http://localhost:8080/auctions/' + auctionId)
             .then(response => response.json())
             .then(data => {
-                displayDonationDetail(data);
+                displayAuctionDetail(data);
             })
             .catch(error => {
-                console.error('도네이션 상세 정보 로드 중 오류 발생:', error);
+                console.error('경매 상세 정보 로드 중 오류 발생:', error);
             });
     }
 
-    // 도네이션 상세 정보 표시 함수
-    function displayDonationDetail(donation) {
-        currentDonationId = donation.id;
-        document.getElementById('donationTitle').innerText = donation.title;
-        document.getElementById('donationDescription').innerText = donation.description;
-        document.getElementById('donationMemberName').innerText = donation.memberName;
-        document.getElementById('donationPresentPrice').innerText = donation.presentPrice + '원';
+    // 경매 상세 정보 표시 함수
+    function displayAuctionDetail(auction) {
+        currentAuctionId = auction.id;
+        document.getElementById('auctionTitle').innerText = auction.title;
+        document.getElementById('auctionDescription').innerText = auction.description;
+        document.getElementById('auctionMemberName').innerText = auction.memberName;
+        document.getElementById('auctionStartPrice').innerText = auction.startPrice + '원';
+        document.getElementById('auctionStartDateTime').innerText = auction.startDateTime;
 
-        document.getElementById('donationList').style.display = 'none';
-        document.getElementById('donationDetail').style.display = 'block';
+        document.getElementById('auctionList').style.display = 'none';
+        document.getElementById('auctionDetail').style.display = 'block';
 
         // 참여자 목록 초기화
         displayParticipants([]);
@@ -291,13 +387,13 @@
         document.getElementById('messages').innerHTML = '';
 
         // 페이지 스크롤을 상세 정보로 이동
-        document.getElementById('donationDetail').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('auctionDetail').scrollIntoView({ behavior: 'smooth' });
     }
 
     // 뒤로 가기 버튼 이벤트
     document.getElementById('backBtn').addEventListener('click', function() {
-        document.getElementById('donationList').style.display = 'block';
-        document.getElementById('donationDetail').style.display = 'none';
+        document.getElementById('auctionList').style.display = 'block';
+        document.getElementById('auctionDetail').style.display = 'none';
     });
 
     // WebSocket 연결 설정 함수
@@ -321,7 +417,7 @@
 
     // 채팅방 참가 함수
     function joinChat() {
-        if (!currentDonationId) {
+        if (!currentAuctionId) {
             alert('도네이션을 선택해주세요.');
             return;
         }
@@ -345,7 +441,7 @@
             leaveChat();
         }
 
-        var destination = '/sub/chat/donations/' + currentDonationId;
+        var destination = '/sub/chat/auctions/' + currentAuctionId;
 
         // 참여자 목록 구독
         var participantsDestination = destination + '/subscribers';
@@ -360,14 +456,14 @@
             displayMessage(chatMessage);
         });
 
-        console.log('도네이션 ' + currentDonationId + ' 채팅방에 참가했습니다.');
+        console.log('경매 ' + currentAuctionId + ' 채팅방에 참가했습니다.');
 
         // 채팅방 표시 및 메시지 초기화
         document.getElementById('chatroom').style.display = 'block';
         document.getElementById('messages').innerHTML = '';
 
         // 이전 채팅 메시지 가져오기
-        loadChatHistory(currentDonationId);
+        loadChatHistory(currentAuctionId);
 
         // 버튼 상태 업데이트
         document.getElementById('joinChatBtn').disabled = true;
@@ -398,8 +494,8 @@
     }
 
     // 이전 채팅 메시지 로드 함수
-    function loadChatHistory(donationId) {
-        fetch('http://localhost:8080/chats?donationId=' + donationId)
+    function loadChatHistory(auctionId) {
+        fetch('http://localhost:8080/chats?auctionId=' + auctionId)
             .then(response => response.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -434,7 +530,7 @@
         }
 
         // 메시지 전송
-        stompClient.send('/pub/chat/donations/' + currentDonationId, {}, message);
+        stompClient.send('/pub/chat/auctions/' + currentAuctionId, {}, message);
 
         messageInput.value = '';
     }
@@ -477,6 +573,78 @@
         }
     });
 
+    // 경매 생성 버튼 클릭 시 모달 열기
+    createAuctionBtn.addEventListener('click', function() {
+        createAuctionModal.style.display = 'block';
+    });
+
+    // 모달 닫기 버튼 클릭 시 모달 닫기
+    closeCreateAuctionModal.addEventListener('click', function() {
+        createAuctionModal.style.display = 'none';
+    });
+
+    // 경매 생성 폼 제출 버튼 클릭 시 처리
+    submitCreateAuctionBtn.addEventListener('click', function() {
+        var title = document.getElementById('auctionTitleInput').value.trim();
+        var description = document.getElementById('auctionDescriptionInput').value.trim();
+        var startingPrice = parseLong(document.getElementById('auctionStartPriceInput').value.trim());
+        var startingDateTime = document.getElementById('auctionStartDateTimeInput').value;
+
+        // 유효성 검사
+        if (!title || !description || isNaN(startingPrice) || !startingDateTime) {
+            alert('모든 필드를 올바르게 입력해주세요.');
+            return;
+        }
+
+        // 회원 ID 확인
+        memberId = document.getElementById('memberId').value.trim();
+        if (!memberId) {
+            alert('회원 ID를 입력해주세요.');
+            return;
+        }
+
+        // 경매 생성 데이터 준비
+        var auctionData = {
+            title: title,
+            description: description,
+            startingPrice: startingPrice,
+            startingDateTime: startingDateTime
+        };
+
+        // 경매 생성 요청 보내기
+        fetch('http://localhost:8080/auctions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'memberId': memberId
+            },
+            body: JSON.stringify(auctionData)
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert('경매가 성공적으로 생성되었습니다.');
+                    createAuctionModal.style.display = 'none';
+                    // 경매 목록 갱신
+                    loadAuctionList();
+                } else {
+                    response.text().then(text => {
+                        alert('경매 생성에 실패했습니다: ' + text);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('경매 생성 중 오류 발생:', error);
+                alert('경매 생성 중 오류가 발생했습니다.');
+            });
+    });
+
+    // 외부 클릭 시 모달 닫기
+    window.addEventListener('click', function(event) {
+        if (event.target == createAuctionModal) {
+            createAuctionModal.style.display = 'none';
+        }
+    });
+
     // 페이지를 떠날 때 WebSocket 연결 해제
     window.onbeforeunload = function() {
         if (stompClient) {
@@ -485,6 +653,12 @@
             });
         }
     };
+
+    // Long parsing helper function
+    function parseLong(value) {
+        var parsed = parseInt(value, 10);
+        return isNaN(parsed) ? null : parsed;
+    }
 </script>
 </body>
 </html>
