@@ -2,7 +2,7 @@ package com.heartauction.auction.application.response;
 
 import com.heartauction.auction.domain.Auction;
 import com.heartauction.auction.domain.Donation;
-import com.heartauction.member.application.response.MemberResponse;
+import com.heartauction.auth.LoginMember;
 import java.time.LocalDateTime;
 
 public record AuctionResponse(
@@ -13,7 +13,7 @@ public record AuctionResponse(
         Long startPrice,
         LocalDateTime startDateTime
 ) {
-    public static AuctionResponse of(Auction auction, MemberResponse member) {
+    public static AuctionResponse of(Auction auction, LoginMember member) {
         Donation donation = auction.getDonation();
         return new AuctionResponse(
                 donation.getId(), donation.getTitle(), donation.getDescription(), member.name(),

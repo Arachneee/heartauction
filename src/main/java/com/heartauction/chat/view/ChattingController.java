@@ -1,9 +1,10 @@
 package com.heartauction.chat.view;
 
+import com.heartauction.auth.LoginMember;
 import com.heartauction.chat.application.ChatService;
 import com.heartauction.chat.application.request.ChatRequest;
 import com.heartauction.chat.application.response.ChatResponse;
-import com.heartauction.common.auth.Login;
+import com.heartauction.auth.Login;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +27,8 @@ public class ChattingController {
 
     @MessageMapping("/chat/auctions/{auctionId}")
     @SendTo("/sub/chat/auctions/{auctionId}")
-    public ChatResponse createChat(@Login Long memberId, @DestinationVariable Long auctionId, @Payload String message) {
-        return chatService.createChat(auctionId, new ChatRequest(memberId, message));
+    public ChatResponse createChat(@Login LoginMember member, @DestinationVariable Long auctionId, @Payload String message) {
+        return chatService.createChat(auctionId, new ChatRequest(member, message));
     }
 
     // TODO : 페이징

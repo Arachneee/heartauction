@@ -1,4 +1,4 @@
-package com.heartauction.common.auth;
+package com.heartauction.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
@@ -16,20 +16,18 @@ public class AuthenticationArgumentResolver implements HandlerMethodArgumentReso
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(Login.class) && parameter.getParameterType().equals(Long.class);
+        return parameter.hasParameterAnnotation(Login.class) && parameter.getParameterType().equals(LoginMember.class);
     }
 
     @Override
-    public Long resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public LoginMember resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-        String memberId = request.getHeader("memberId");
-
-        return Long.parseLong(memberId);
+        return (LoginMember) request.getAttribute(LoginMember.key);
     }
 
     @Override
-    public Long resolveArgument(MethodParameter parameter, Message<?> message) throws Exception {
+    public LoginMember resolveArgument(MethodParameter parameter, Message<?> message) throws Exception {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(message);
-        return (Long) headerAccessor.getSessionAttributes().get("memberId");
+        return (LoginMember) headerAccessor.getSessionAttributes().get(LoginMember.key);
     }
 }

@@ -1,7 +1,7 @@
 package com.heartauction.common.config;
 
-import com.heartauction.chat.view.StompHandshakeInterceptor;
-import com.heartauction.common.auth.AuthenticationArgumentResolver;
+import com.heartauction.auth.AdminCheckInterceptor;
+import com.heartauction.auth.AuthenticationArgumentResolver;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +17,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final StompHandshakeInterceptor stompHandshakeInterceptor;
+    private final AdminCheckInterceptor adminCheckInterceptor;
     private final AuthenticationArgumentResolver authenticationArgumentResolver;
 
     @Override
@@ -38,7 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(stompHandshakeInterceptor);
+        registration.interceptors(adminCheckInterceptor);
     }
 
     @Override

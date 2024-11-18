@@ -1,4 +1,4 @@
-package com.heartauction.common.auth;
+package com.heartauction.auth;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -8,7 +8,7 @@ import com.heartauction.auction.domain.Donation;
 import com.heartauction.auction.domain.repository.DonationRepository;
 import com.heartauction.auction.domain.repository.AuctionRepository;
 import com.heartauction.member.application.MemberService;
-import com.heartauction.member.application.response.MemberResponse;
+import com.heartauction.auth.LoginMember;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +25,9 @@ public class AuctionService {
     private final MemberService memberService;
 
     @Transactional
-    public void create(Long memberId, AuctionRequest request) {
-        memberService.validateId(memberId);
-
+    public void create(LoginMember member, AuctionRequest request) {
         log.info("auction request : {}", request);
-        Donation donation = new Donation(request.title(), request.description(), memberId);
+        Donation donation = new Donation(request.title(), request.description(), member.id());
         donationRepository.save(donation);
 
         Auction auction = Auction.create(donation, request.startingPrice(), request.startingDateTime());
@@ -49,7 +47,7 @@ public class AuctionService {
                 .orElseThrow(() -> new IllegalArgumentException("auction not found"));
 
         Donation donation = auction.getDonation();
-        MemberResponse member = memberService.findById(donation.getMemberId());
+        LoginMember member = memberService.login(donation.getMemberId());
 
         return AuctionResponse.of(auction, member);
     }

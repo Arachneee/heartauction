@@ -18,19 +18,19 @@ class MemberServiceTest extends ServiceTestSupport {
     @Autowired
     private MemberRepository memberRepository;
 
-    @DisplayName("회원 ID가 존재하는지 검증한다. - True")
+    @DisplayName("회원 ID가 존재하면 로그인 된다.")
     @Test
-    void validateIdTrue() {
+    void loginTrue() {
         Member member = memberRepository.save(new Member("회원1"));
 
-        assertThatCode(() -> memberService.validateId(member.getId()))
+        assertThatCode(() -> memberService.login(member.getId()))
                 .doesNotThrowAnyException();
     }
 
-    @DisplayName("회원 ID가 존재하는지 검증한다. - False")
+    @DisplayName("회원 ID가 존재하지 않으면 로그인 되지 않는다.")
     @Test
     void validateIdFalse() {
-        assertThatThrownBy(() -> memberService.validateId(1L))
+        assertThatThrownBy(() -> memberService.login(1L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

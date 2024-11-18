@@ -5,7 +5,7 @@ import com.heartauction.chat.application.response.ChatResponse;
 import com.heartauction.chat.domain.Chat;
 import com.heartauction.chat.domain.ChatRepository;
 import com.heartauction.member.application.MemberService;
-import com.heartauction.member.application.response.MemberResponse;
+import com.heartauction.auth.LoginMember;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,12 +20,12 @@ public class ChatService {
 
     @Transactional
     public ChatResponse createChat(Long auctionId, ChatRequest request) {
-        MemberResponse memberResponse = memberService.findById(request.senderId());
+        LoginMember loginMember = request.sender();
 
         Chat chat = request.toChat(auctionId);
         Chat savedChat = chatRepository.save(chat);
 
-        return ChatResponse.of(savedChat, memberResponse);
+        return ChatResponse.of(savedChat, loginMember);
     }
 
     @Transactional(readOnly = true)
@@ -33,7 +33,7 @@ public class ChatService {
         List<Chat> chats = chatRepository.findAllByAuctionId(auctionId);
 
         return chats.stream()
-                .map(chat -> ChatResponse.of(chat, memberService.findById(chat.getSenderId())))
+                .map(chat -> ChatResponse.of(chat, memberService.login(chat.getSenderId())))
                 .toList();
     }
 }

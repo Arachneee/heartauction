@@ -4,7 +4,8 @@ import com.heartauction.auction.application.AuctionService;
 import com.heartauction.auction.application.request.AuctionRequest;
 import com.heartauction.auction.application.response.AuctionResponse;
 import com.heartauction.auction.application.response.AuctionSummaryResponse;
-import com.heartauction.common.auth.Login;
+import com.heartauction.auth.Login;
+import com.heartauction.auth.LoginMember;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +33,8 @@ public class AuctionController {
     }
 
     @PostMapping("/auctions")
-    public ResponseEntity<Void> create(@Login Long memberId, @RequestBody AuctionRequest request) {
-        auctionService.create(memberId, request);
+    public ResponseEntity<Void> create(@Login LoginMember member, @RequestBody AuctionRequest request) {
+        auctionService.create(member, request);
         return ResponseEntity.ok().build();
     }
 }

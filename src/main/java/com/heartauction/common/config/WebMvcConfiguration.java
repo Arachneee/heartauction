@@ -1,6 +1,6 @@
 package com.heartauction.common.config;
 
-import com.heartauction.common.auth.AuthenticationArgumentResolver;
+import com.heartauction.auth.AuthenticationArgumentResolver;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
